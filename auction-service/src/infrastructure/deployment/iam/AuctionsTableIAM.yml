@@ -1,0 +1,13 @@
+AuctionsTableIAM:
+  Effect: "Allow"        
+  Action:
+    - dynamodb:PutItem
+    - dynamodb:Scan
+    - dynamodb:GetItem
+    - dynamodb:UpdateItem
+    - dynamodb:Query
+  Resource: 
+    - ${self:custom.AuctionTable.arn}
+    - !Join ['/', ['${self:custom.AuctionTable.arn}','index','statusAndEndDate']]
+      #the above resource is of the secondary global index as that is also another table under the hood.
+  #self is used to refer the serverless.yml file and rest is the patch of the attribute used#

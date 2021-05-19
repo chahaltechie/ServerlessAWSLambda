@@ -1,0 +1,63 @@
+org: chahaltechie
+app: auction-service-app
+service:
+  name: auction-service
+
+plugins:
+  - serverless-offline
+  - serverless-iam-roles-per-function
+  - serverless-bundle
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+  region: 'us-east-1'
+  environment:
+    AUCTIONS_TABLE_NAME: AuctionsTable-${self:provider.stage}
+  iamRoleStatements:
+    - ${file(src/infrastructure/deployment/iam/AuctionsTableIAM.yml):AuctionsTableIAM}
+
+resources:
+  Resources:
+    AuctionsTable: ${file(src/infrastructure/deployment/resources/AuctionsTable.yml):AuctionsTable}
+  
+functions:
+  createAuction:
+    handler: src/handlers/createAuction.handler
+    events:
+      - http:
+          method: POST
+          path: /auction
+  getAuctions:
+    handler: src/handlers/getAuctions.handler
+    events:
+      - http:
+          method: GET
+          path: /auctions
+  getAuction:
+    handler: src/handlers/getAuction.handler
+    events:
+      - http:
+          method: GET
+          path: /auction/{id}
+  placeBid:
+    handler: src/handlers/placeBid.handler
+    events:
+      - http:
+          method: POST
+          path: /auction/{id}/bid
+  processAuction:
+    handler: src/handlers/processAuction.handler
+    events:
+      - schedule: rate(24 hours)
+
+# writing code here to get the output of the resource - AuctionTable name and arn... ref is a function and ! is used to call the function
+custom:
+  AuctionTable:
+    name: !Ref AuctionsTable
+    arn: !GetAtt AuctionsTable.Arn
+  bundle:
+    linting: false
