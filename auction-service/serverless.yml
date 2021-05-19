@@ -17,8 +17,10 @@ provider:
   region: 'us-east-1'
   environment:
     AUCTIONS_TABLE_NAME: AuctionsTable-${self:provider.stage}
+    MAIL_QUEUE_URL: ${self:custom.MailQueue.url}
   iamRoleStatements:
     - ${file(src/infrastructure/deployment/iam/AuctionsTableIAM.yml):AuctionsTableIAM}
+    - ${file(src/infrastructure/deployment/iam/MailQueueIAM.yml):MailQueueIAM}
 
 resources:
   Resources:
@@ -55,7 +57,11 @@ functions:
       - schedule: rate(24 hours)
 
 # writing code here to get the output of the resource - AuctionTable name and arn... ref is a function and ! is used to call the function
+# cf is for cloudformation:service name - stage . output variable name
 custom:
+  MailQueue:
+    arn: ${cf:notification-service-${self:provider.stage}.MailQueueArn} 
+    url: ${cf:notification-service-${self:provider.stage}.MailQueueUrl}
   AuctionTable:
     name: !Ref AuctionsTable
     arn: !GetAtt AuctionsTable.Arn
