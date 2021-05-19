@@ -3,6 +3,7 @@
 service: notification-service
 
 plugins:
+  - serverless-offline
   - serverless-bundle
   - serverless-pseudo-parameters
 
@@ -14,13 +15,36 @@ provider:
   stage: ${opt:stage, 'dev'}
   iamRoleStatements:
     - ${file(src/infrastructure/iam/sendMailIAM.yml):SendMailIAM}
-  
+resources:
+  Resources:
+    MailQueue: ${file(src/infrastructure/resources/MailQueue.yml):MailQueue}
+  Outputs:
+    MailQueueArn:
+      Value: ${self:custom.mailQueue.arn}
+      Export:
+        Name: ${self:custom.mailQueue.name}-Arn
+    MailQueueUrl:
+      Value: ${self:custom.mailQueue.url}
+      Export:
+        Name: ${self:custom.mailQueue.name}-Url 
+#  Outputs:
+#    MailQueueArn: ${src/infrastructure/resources/MailQueue.yml):Outputs.MailQueueArn}
+#    MailQueueUrl: ${src/infrastructure/resources/MailQueue.yml):Outputs.MailQueueUrl}
+    
 functions:
   sendEmail:
     handler: src/handlers/sendMail.handler
+    events:
+      - sqs: 
+          arn: ${self:custom.mailQueue.arn}
+          batchSize: 1
     
     
 custom:
+  mailQueue:
+    name: MailQueue-${self:provider.stage}
+    arn: !GetAtt MailQueue.Arn
+    url: !Ref MailQueue
   bundle:
     linting: false
     
