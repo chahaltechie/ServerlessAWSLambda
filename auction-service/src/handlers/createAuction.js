@@ -9,7 +9,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 async function createAuction(event, context) {
     const {title} = event.body;
-
+    const {email} = event.requestContext.authorizer;
     const now = new Date();
     const endDate = new Date();
     endDate.setHours(now.getHours() + 1);
@@ -20,8 +20,10 @@ async function createAuction(event, context) {
         createdAt: now.toISOString(),
         endingAt: endDate.toISOString(),
         highestBid: {
-            amount: 0
-        }
+            amount: 0,
+            bidder: ''
+        },
+        seller: email
     };
     try {
         const result = await dynamoDb.put({
@@ -32,7 +34,6 @@ async function createAuction(event, context) {
         console.error(e);
         throw new createError.InternalServerError(e);
     }
-
 
     return {
         statusCode: 201,

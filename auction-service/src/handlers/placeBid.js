@@ -10,6 +10,7 @@ async function placeBid(event, context) {
     let updatedAuction;
     const {id} = event.pathParameters;
     const {amount} = event.body;
+    const {email} = event.requestContext.authorizer;
     //check if passed auction id is valid or not.
     const auction = await getAuctionById(id);
     if (auction.highestBid && auction.highestBid.amount >= amount) {
@@ -19,9 +20,10 @@ async function placeBid(event, context) {
         const result = await dynamoDb.update({
             TableName: process.env.AUCTIONS_TABLE_NAME,
             Key: {id},
-            UpdateExpression: 'set  highestBid.amount=:amount',
+            UpdateExpression: 'set  highestBid.amount=:amount, highestBid.bidder = :bidder',
             ExpressionAttributeValues: {
-                ':amount': amount
+                ':amount': amount,
+                ':bidder': email
             },
             ReturnValues: "ALL_NEW"
         }).promise();
